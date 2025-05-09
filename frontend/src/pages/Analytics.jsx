@@ -1,45 +1,36 @@
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useParams } from 'react-router-dom';
+import axiosInstance from '../api/axiosInstance';
 
-function Analytics() {
-  const [analytics, setAnalytics] = useState([]);
+const Analytics = () => {
+  const { shortUrl } = useParams();
+  const [data, setData] = useState(null);
 
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const response = await axios.get('/api/analytics');
-        setAnalytics(response.data);
-      } catch (error) {
-        console.error("Error fetching analytics", error);
+        const res = await axiosInstance.get(`/url/analytics/${shortUrl}`);
+        setData(res.data);
+      } catch (err) {
+        alert('Failed to load analytics');
       }
     };
-
     fetchAnalytics();
-  }, []);
+  }, [shortUrl]);
+
+  if (!data) return <div className="text-center mt-20">Loading...</div>;
 
   return (
-    <div>
-      <h2>Analytics</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Short URL</th>
-            <th>Clicks</th>
-            <th>Created At</th>
-          </tr>
-        </thead>
-        <tbody>
-          {analytics.map((item, index) => (
-            <tr key={index}>
-              <td>{item.shortUrl}</td>
-              <td>{item.clicks}</td>
-              <td>{item.createdAt}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="flex justify-center items-center h-screen">
+      <div className="bg-white p-6 rounded shadow-md w-96">
+        <h2 className="text-2xl font-bold mb-4">Analytics</h2>
+        <p><strong>Original URL:</strong> {data.originalUrl}</p>
+        <p><strong>Short URL:</strong> {data.shortUrl}</p>
+        <p><strong>Clicks:</strong> {data.clicks}</p>
+        <p><strong>Created At:</strong> {new Date(data.createdAt).toLocaleString()}</p>
+      </div>
     </div>
   );
-}
+};
 
 export default Analytics;
