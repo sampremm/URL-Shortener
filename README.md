@@ -1,62 +1,67 @@
-f# URL Shortener Backend
 
-This is the backend for the **URL Shortener** application. It allows users to shorten long URLs and access the original URLs via a unique shortened link. The backend is built using **Node.js**, **Express.js**, and **MongoDB** to handle URL shortening, redirection, and user authentication.
+# 🔗 URL Shortener
 
-The backend API is equipped with **rate limiting**, **CORS**, and **authentication** for secure access to the service.
+A full-stack **URL Shortener** application that allows users to shorten long URLs, monitor analytics, and manage their links through an intuitive interface. It includes authentication, redirection, click tracking, and user-specific dashboards.
 
-## Table of Contents
+---
 
-- [Project Overview](#project-overview)
-- [Technologies](#technologies)
-- [Setup](#setup)
-- [Endpoints](#endpoints)
-- [Middleware](#middleware)
-- [Environment Variables](#environment-variables)
-- [License](#license)
+## 📌 Features
 
-## Project Overview
+### 🔒 Authentication
+- Sign up, log in, and maintain sessions via JWT tokens (stored in HTTP-only cookies).
 
-This project provides a RESTful API for shortening URLs and allowing users to manage their shortened URLs through authentication. It includes the following features:
+### ✂️ URL Shortening
+- Generate unique, shortened URLs for any valid long URL.
+- Option to create **custom short URLs**.
 
-- **URL Shortening**: Shorten long URLs and get a unique shortened version.
-- **Redirection**: Redirect users to the original URL when they visit the shortened URL.
-- **User Authentication**: Register and log in to manage shortened URLs.
-- **Rate Limiting**: Prevent abuse with a rate limiter for requests.
-- **CORS**: Configured for frontend communication with specific origins.
+### 🔁 Redirection
+- Accessing a short URL redirects to the original long URL.
+- Tracks number of clicks and timestamp data.
 
-## Technologies
+### 📊 Analytics
+- Logged-in users can view analytics like:
+  - Total clicks per URL
+  - Timestamp history
+  - Most visited links
 
-- **Node.js**: JavaScript runtime for server-side development.
-- **Express.js**: Web framework for building APIs in Node.js.
-- **MongoDB**: NoSQL database for storing original and shortened URLs.
-- **Mongoose**: MongoDB ODM for managing data and interactions.
-- **dotenv**: For managing environment variables securely.
-- **cors**: To handle cross-origin requests between the backend and frontend.
-- **cookie-parser**: For parsing cookies, especially for handling authentication tokens.
-- **rate-limiter-flexible**: To protect the server from excessive requests.
+---
 
-## Setup
+## 🛠️ Tech Stack
 
-Follow these steps to set up the backend locally:
+### Backend
+- **Node.js**, **Express.js**
+- **MongoDB**, **Mongoose**
+- **JWT**, **Cookie-parser**, **CORS**
+- **Rate Limiting** (`rate-limiter-flexible`)
+- **Redis** (optional for caching and rate limiting)
 
-1. **Clone the repository**:
+### Frontend
+- **React.js** with **Vite**
+- **Axios** for API communication
+- **TailwindCSS** for styling
+- **React Router** for navigation
+- **Private Routes** with authentication guard
+- **Responsive Design**
 
+---
+
+## ⚙️ Setup Instructions
+
+### 📦 Backend
+
+1. Clone the repository and navigate to the backend folder:
    ```bash
    git clone https://github.com/sampremm/URL-Shortener.git
    cd URL-Shortener/backend
-   ```
+````
 
-2. **Install dependencies**:
-
-   Run the following command to install the required dependencies:
+2. Install dependencies:
 
    ```bash
    npm install
    ```
 
-3. **Create a `.env` file**:
-
-   Create a `.env` file in the root directory and add the necessary environment variables. Example:
+3. Create a `.env` file:
 
    ```
    MONGO_URI=mongodb://localhost:27017/shortener
@@ -64,141 +69,114 @@ Follow these steps to set up the backend locally:
    JWT_SECRET=your_jwt_secret
    ```
 
-   - `MONGO_URI`: Your MongoDB connection string (use your MongoDB Atlas URL or local instance).
-   - `PORT`: The port your server will run on (default is `3000`).
-   - `JWT_SECRET`: Secret key for signing JWT tokens (for authentication).
-
-4. **Run the server**:
-
-   Start the server by running:
+4. Start the server:
 
    ```bash
    npm start
    ```
 
-   The server will be running on [http://localhost:3000](http://localhost:3000).
+### 🌐 Frontend
 
-## Endpoints
+1. Navigate to the frontend folder:
 
-### `GET /`
+   ```bash
+   cd ../frontend
+   ```
 
-**Description**: A simple route to check if the server is running.
+2. Install dependencies:
 
-**Response**:
-```json
-{
-  "message": "Hello World"
-}
-```
+   ```bash
+   npm install
+   ```
 
-### `POST /url/shorten`
+3. Create a `.env` file:
 
-**Description**: Shortens a given URL.
+   ```
+   VITE_API_BASE_URL=http://localhost:3000
+   ```
 
-**Request Body**:
-```json
-{
-  "originalUrl": "https://www.example.com"
-}
-```
+4. Run the React app:
 
-**Response**:
-```json
-{
-  "shortenedUrl": "http://localhost:3000/abc123"
-}
-```
+   ```bash
+   npm run dev
+   ```
 
-### `GET /url/:shortenedUrl`
+---
 
-**Description**: Redirects to the original URL using the shortened URL.
+## 🔌 API Endpoints (Backend)
 
-**Response**:
-- Redirects to the original URL.
+### Auth Routes
 
-### `POST /url/auth/signup`
+* `POST /url/auth/signup` – Register user
+* `POST /url/auth/login` – Login and receive JWT
+* `POST /url/auth/logout` – Clear auth token
 
-**Description**: Registers a new user.
+### URL Management
 
-**Request Body**:
-```json
-{
-  "username": "johnDoe",
-  "email": "johndoe@example.com",
-  "password": "securePassword"
-}
-```
+* `POST /url/shorten` – Shorten a new URL (auth required)
+* `GET /url/:shortId` – Redirect to original URL
+* `GET /url/profile` – Get all shortened URLs for logged-in user
+* `GET /url/analytics/:shortId` – View analytics for a specific URL
 
-**Response**:
-```json
-{
-  "message": "User successfully registered"
-}
-```
+---
 
-### `POST /url/auth/login`
+## 🧩 Frontend Routes
 
-**Description**: Logs in an existing user and returns an authentication token.
+| Path             | Description                   | Auth Required |
+| ---------------- | ----------------------------- | ------------- |
+| `/`              | Home / Shorten a URL          | ✅             |
+| `/login`         | Login page                    | ❌             |
+| `/signup`        | Sign up page                  | ❌             |
+| `/profile`       | View your links & analytics   | ✅             |
+| `/analytics/:id` | View analytics of a short URL | ✅             |
 
-**Request Body**:
-```json
-{
-  "email": "johndoe@example.com",
-  "password": "securePassword"
-}
-```
+---
 
-**Response**:
-```json
-{
-  "message": "Login successful",
-  "token": "jwt-token"
-}
-```
+## 🔐 Middleware
 
-## Middleware
+* **Rate Limiting**: Protects API endpoints from abuse.
+* **CORS**: Allows frontend on `http://localhost:5173` to access backend.
+* **Cookie Parser**: Parses JWT from cookies.
+* **Auth Middleware**: Validates and extracts user data from token.
 
-### Rate Limiter
+---
 
-The rate limiter middleware (`limiter`) is configured to limit the number of requests that can be made to the API in a given time frame, preventing abuse and overloading the server.
-
-### CORS
-
-CORS (Cross-Origin Resource Sharing) is configured to allow the frontend (on `http://localhost:5173`) to make requests to the backend.
-
-### Cookie Parser
-
-The `cookie-parser` middleware is used to parse cookies, especially for handling JWT tokens for authentication.
-
-## Environment Variables
-
-The following environment variables are required:
-
-- `MONGO_URI`: MongoDB connection string (Example: `mongodb://localhost:27017/shortener`).
-- `PORT`: Port for the server to run on (default is `3000`).
-- `JWT_SECRET`: Secret key for signing JWT tokens.
-  
-Example `.env` file:
+## 📁 Folder Structure
 
 ```
-MONGO_URI=mongodb://localhost:27017/shortener
-PORT=3000
-JWT_SECRET=your_jwt_secret
+URL-Shortener/
+│
+├── backend/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── middleware/
+│   └── server.js
+│
+└── frontend/
+    ├── src/
+    │   ├── components/
+    │   ├── pages/
+    │   ├── hooks/
+    │   └── App.jsx
+    └── index.html
 ```
 
-## License
+---
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+## 📜 License
+
+This project is licensed under the MIT License.
+See the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👨‍💻 Author
+
+**Sam Prem Kumar Thalla**
+🔗 [GitHub](https://github.com/sampremm) | 📷 [Photography](https://instagram.com/) *(if you'd like to include it)*
+
 ```
 
-This README provides:
-
-- **Project Overview**: A brief explanation of the project.
-- **Technologies**: A list of technologies used.
-- **Setup**: Instructions for setting up the backend locally.
-- **Endpoints**: Detailed description of the API routes.
-- **Middleware**: Explanation of the middleware used (Rate Limiting, CORS, and Cookie Parsing).
-- **Environment Variables**: A section for environment variables.
-- **License**: Information about the project's license.
-
-You can modify it further based on your needs! Let me know if you'd like any adjustments.
+Would you like me to generate the frontend `README.md` separately as well with screenshots and GIF placeholders?
+```
