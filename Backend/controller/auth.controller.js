@@ -3,9 +3,9 @@ import { generateToken } from "../utils/generateToken.js";
 
 export const registeruser = async (req, res) => {
     try {
-        const { username, email, password } = req.body;
+        const {  email, password } = req.body;
 
-        if (!username || !email || !password) {
+        if (!email || !password) {
             console.warn("Registration failed: Missing fields");
             return res.status(400).json({ error: "All fields are required" });
         }
@@ -17,7 +17,7 @@ export const registeruser = async (req, res) => {
             return res.status(400).json({ error: "User already exists" });
         }
 
-        const user = await User.create({ username, email, password });
+        const user = await User.create({  email, password });
 
         if (user) {
             const token = generateToken(user._id);
@@ -31,7 +31,6 @@ export const registeruser = async (req, res) => {
             console.info(`User registered successfully: ${email}`);
             res.status(201).json({
                 _id: user._id,
-                username: user.username,
                 email: user.email,
                 token,
             });
@@ -69,7 +68,6 @@ export const loginuser = async (req, res) => {
             console.info(`User logged in successfully: ${email}`);
             res.json({
                 _id: user._id,
-                username: user.username,
                 email: user.email,
                 token,
             });

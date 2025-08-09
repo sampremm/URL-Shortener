@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import connectRedis from './config/redis.js';
+import connectRedis from "./config/redis.js";
 
 
 dotenv.config();
@@ -16,7 +16,7 @@ const app = express();
 app.use(express.json());
 connectDB();
 
-connectRedis();
+
 app.use(cors(
   {
     origin: "http://localhost:5173", // Allow frontend origin (React)

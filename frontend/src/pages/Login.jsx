@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axiosInstance from '../api/axiosInstance';
+import axios from 'axios';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -12,8 +12,13 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axiosInstance.post('/url/auth/login', { email, password });
-      const res = await axiosInstance.get('/url/auth/profile');
+      const res = await axios.post(
+        `${import.meta.env.VITE_APP_API_URL}/auth/login`,
+        { email, password },
+        { withCredentials: true } // <-- This is required for cookies!
+      );
+      const token = res.data.token;
+      localStorage.setItem('token', token);
       setUser(res.data);
       navigate('/profile');
     } catch (err) {

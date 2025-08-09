@@ -1,131 +1,118 @@
-import { nanoid } from "nanoid";
-import Url from "../model/url.js";
-import client from "../config/redisClient.js"; 
+import { nanoid } from 'nanoid';
+import Url from '../model/url.js';
+import client from '../config/redisClient.js';
+import mongoose from 'mongoose';
+
 
 export const shortenUrl = async (req, res) => {
-    try {
-        const { originalUrl } = req.body;
+  try {
+    const { originalUrl } = req.body;
+    const userId = req.user._id;
 
-        if (!originalUrl) {
-            return res.status(400).json({ error: "Original URL is required" });
-        }
-
-        // Check if the URL already exists in Redis
-        let shortUrl = await client.get(originalUrl);
-        if (shortUrl) {
-            return res.status(200).json({
-                message: "Short URL retrieved from cache",
-                shortUrl,
-                originalUrl,
-            });
-        }
-
-        // Check if the URL already exists in the database
-        let url = await Url.findOne({ originalUrl });
-        if (url) {
-            // Cache the short URL in Redis
-            await client.set(originalUrl, url.shortUrl);
-            return res.status(200).json({
-                message: "Short URL already exists",
-                shortUrl: url.shortUrl,
-                originalUrl: url.originalUrl,
-            });
-        }
-
-        // Generate a unique short URL
-        shortUrl = nanoid(8);
-
-        // Save the new URL to the database
-        url = new Url({ originalUrl, shortUrl });
-        await url.save();
-
-        // Cache the new short URL in Redis
-        await client.set(shortUrl, originalUrl); 
-
-
-        res.status(201).json({
-            message: "Short URL created successfully",
-            shortUrl,
-            originalUrl,
-        });
-    } catch (error) {
-        console.error("Error in shortenUrl:", error.message);
-        res.status(500).json({ error: "Server error", message: error.message });
+    if (!originalUrl) {
+      return res.status(400).json({ error: 'Original URL is required' });
     }
+
+    let shortUrl = await client.get(originalUrl);
+    if (shortUrl) {
+      return res.status(200).json({
+        message: 'Short URL retrieved from cache',
+        shortUrl,
+        originalUrl,
+      });
+    }
+
+    let url = await Url.findOne({ originalUrl, userId });
+    if (url) {
+      await client.set(originalUrl, url.shortUrl, 'EX', 3600);
+      return res.status(200).json({
+        message: 'Short URL already exists',
+        shortUrl: url.shortUrl,
+        originalUrl: url.originalUrl,
+      });
+    }
+
+    shortUrl = nanoid(8);
+    url = new Url({ originalUrl, shortUrl, userId });
+    await url.save();
+
+    await client.set(originalUrl, shortUrl, 'EX', 3600);
+
+    res.status(201).json({
+      message: 'Short URL created successfully',
+      shortUrl,
+      originalUrl,
+    });
+  } catch (error) {
+    console.error('Error in shortenUrl:', error.message);
+    res.status(500).json({ error: 'Server error', message: error.message });
+  }
 };
 
 export const redirectUrl = async (req, res) => {
-    const { shortCode } = req.params;
+  const { shortCode } = req.params;
 
-    try {
-        // Check Redis first for the original URL
-        let originalUrl = await client.get(shortCode);
-        console.log("From Redis:", originalUrl);
+  try {
+    let originalUrl = await client.get(shortCode);
+    console.log('From Redis:', originalUrl);
 
-        if (!originalUrl) {
-            // If not found in Redis, fetch from MongoDB
-            const urlDoc = await Url.findOne({ shortUrl: shortCode });
-            console.log("From MongoDB:", urlDoc);
-            console.log("Short code received:", shortCode);
-            if (!urlDoc) {
-                return res.status(404).json({ error: "Short URL not found" });
-            }
+    if (!originalUrl) {
+      const urlDoc = await Url.findOne({ shortUrl: shortCode });
+      console.log('From MongoDB:', urlDoc);
+      if (!urlDoc) {
+        return res.status(404).json({ error: 'Short URL not found' });
+      }
 
-
-            originalUrl = urlDoc.originalUrl;
-
-            // Cache the original URL in Redis
-            await client.set(shortCode, originalUrl);
-        }
-
-        // Increment the click count in MongoDB
-        await Url.updateOne({ shortUrl: shortCode }, { $inc: { clicks: 1 } });
-
-        // Redirect to the original URL
-        return res.redirect(originalUrl);
-        
-    } catch (err) {
-        console.error("Redirect Error:", err.message);
-        res.status(500).json({ error: "Server error", message: err.message });
+      originalUrl = urlDoc.originalUrl;
+      await client.set(shortCode, originalUrl, 'EX', 3600);
     }
+
+    await Url.updateOne({ shortUrl: shortCode }, { $inc: { clicks: 1 } });
+    return res.redirect(originalUrl);
+  } catch (err) {
+    console.error('Redirect Error:', err.message);
+    res.status(500).json({ error: 'Server error', message: err.message });
+  }
 };
 
-export const analyticsurl = async (req, res) => {
-    const { shortUrl } = req.params;
+export const getAnalytics = async (req, res) => {
+  const { id } = req.params;
+  console.log(`getAnalytics called for userId: ${id}`);
 
-    if (!shortUrl || shortUrl.length !== 8) {
-        return res.status(400).json({ error: "Invalid short URL" });
+  try {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid user ID' });
     }
 
-    try {
-        // Check Redis for analytics data
-        const cachedAnalytics = await client.get(`analytics:${shortUrl}`);
-        if (cachedAnalytics) {
-            return res.status(200).json(JSON.parse(cachedAnalytics));
+    const urls = await Url.find({ userId: id });
+    console.log(`Found ${urls.length} URLs for userId: ${id}`);
+
+    const analyticsList = await Promise.all(
+      urls.map(async (url) => {
+        const cacheKey = `analytics:${url.shortUrl}`;
+        const cached = await client.get(cacheKey);
+        if (cached) {
+          console.log(`Cache hit for ${url.shortUrl}`);
+          return JSON.parse(cached);
         }
 
-        // Find the URL document in the database
-        const url = await Url.findOne({ shortUrl });
-
-        if (!url) {
-            return res.status(404).json({ error: "Short URL not found" });
-        }
-
-        // Prepare analytics data
-        const analyticsData = {
-            originalUrl: url.originalUrl,
-            shortUrl: url.shortUrl,
-            clicks: url.clicks,
-            createdAt: url.createdAt,
+        const data = {
+          _id: url._id,
+          originalUrl: url.originalUrl,
+          shortUrl: url.shortUrl,
+          clicks: url.clicks,
+          createdAt: url.createdAt,
         };
 
-        // Cache analytics data in Redis
-        await client.set(`analytics:${shortUrl}`, JSON.stringify(analyticsData), "EX", 3600); // Cache for 1 hour
+        await client.set(cacheKey, JSON.stringify(data), 'EX', 3600);
+        console.log(`Cache set for ${url.shortUrl}`);
+        return data;
+      })
+    );
 
-        res.status(200).json(analyticsData);
-    } catch (error) {
-        console.error("Error in analyticsurl:", error.message);
-        res.status(500).json({ error: "Server error", message: error.message });
-    }
+    res.status(200).json(analyticsList);
+  } catch (err) {
+    console.error('Error fetching user analytics:', err.message);
+    res.status(500).json({ error: 'Server error', message: err.message });
+  }
 };
-

@@ -1,15 +1,16 @@
 import React from 'react';
-import { BrowserRouter as Router } from 'react-router-dom';
+import { BrowserRouter  } from 'react-router-dom';
 import AppRouter from './router/Router';
-import AuthProvider from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
+
 
 const App = () => (
   <AuthProvider>
-    <Router>
+    <BrowserRouter>
       <Navbar />
       <AppRouter />
-    </Router>
+    </BrowserRouter>
   </AuthProvider>
 );
 
