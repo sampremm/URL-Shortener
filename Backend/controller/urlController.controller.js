@@ -75,44 +75,21 @@ export const redirectUrl = async (req, res) => {
   }
 };
 
+
 export const getAnalytics = async (req, res) => {
   const { id } = req.params;
-  console.log(`getAnalytics called for userId: ${id}`);
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return res.status(400).json({ error: 'Invalid user ID' });
+  }
 
   try {
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return res.status(400).json({ error: 'Invalid user ID' });
-    }
-
     const urls = await Url.find({ userId: id });
-    console.log(`Found ${urls.length} URLs for userId: ${id}`);
 
-    const analyticsList = await Promise.all(
-      urls.map(async (url) => {
-        const cacheKey = `analytics:${url.shortUrl}`;
-        const cached = await client.get(cacheKey);
-        if (cached) {
-          console.log(`Cache hit for ${url.shortUrl}`);
-          return JSON.parse(cached);
-        }
-
-        const data = {
-          _id: url._id,
-          originalUrl: url.originalUrl,
-          shortUrl: url.shortUrl,
-          clicks: url.clicks,
-          createdAt: url.createdAt,
-        };
-
-        await client.set(cacheKey, JSON.stringify(data), 'EX', 3600);
-        console.log(`Cache set for ${url.shortUrl}`);
-        return data;
-      })
-    );
-
-    res.status(200).json(analyticsList);
+    // Always return an array
+    return res.json(urls);
   } catch (err) {
-    console.error('Error fetching user analytics:', err.message);
-    res.status(500).json({ error: 'Server error', message: err.message });
+    console.error('Analytics error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };

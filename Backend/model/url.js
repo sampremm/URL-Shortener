@@ -1,30 +1,40 @@
 import mongoose from 'mongoose';
 
-const urlSchema = new mongoose.Schema({
-  originalUrl: {
-    type: String,
-    required: true,
-  },
-  shortUrl: {
-    type: String,
-    required: true,
-    unique: true,
-  },
-  clicks: {
-    type: Number,
-    default: 0,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  userId: {
-    type: mongoose.Schema.Types.ObjectId, // Store user ID as ObjectId
-    required: true, // Ensure every URL is tied to a user
-    ref: 'User', // Reference to User collection (optional, if you have a User model)
-  },
-});
+const { Schema, model } = mongoose;
 
-const Url = mongoose.model('Url', urlSchema);
+const urlSchema = new Schema(
+  {
+    originalUrl: {
+      type: String,
+      required: [true, 'Original URL is required'],
+      trim: true,
+    },
+    shortUrl: {
+      type: String,
+      required: [true, 'Short URL is required'],
+      unique: true,
+      index: true, // speeds up lookups
+      trim: true,
+    },
+    clicks: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User', // link to User collection
+      required: [true, 'User ID is required'],
+    },
+  },
+  {
+    timestamps: true, // automatically adds createdAt & updatedAt
+  }
+);
+
+// Optional: add a compound index for faster analytics by user
+// urlSchema.index({ userId: 1, shortUrl: 1 });
+
+const Url = model('Url', urlSchema);
 
 export default Url;
