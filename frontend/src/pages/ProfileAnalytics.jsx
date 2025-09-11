@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 const ProfileAnalytics = () => {
   const { user, token } = useAuth();
@@ -10,44 +22,36 @@ const ProfileAnalytics = () => {
 
   const fetchAnalytics = async () => {
     if (!user?._id || !token) {
-      console.warn('User ID or token is undefined:', { user, token });
       setError('User not authenticated');
       return;
     }
 
     setLoading(true);
-    const baseURL = import.meta.env.VITE_API_URL;
-    const url = `${baseURL}/analytics/${user._id}`; // Fixed endpoint
+    setError('');
 
-    console.log('Fetching analytics from:', url, 'Token:', token);
-
+    const baseURL = import.meta.env.VITE_APP_API_URL; // your API base URL
+    const url = `${baseURL}/analytics/${user._id}`;
+    console.log(url);
     try {
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000, // 10-second timeout
+        timeout: 10000,
       });
-
-      console.log('API Response:', res.data);
 
       if (Array.isArray(res.data)) {
         setAnalytics(res.data);
-        setError('');
+      } else if (res.data && res.data.error) {
+        setError(res.data.error);
       } else {
-        throw new Error('Unexpected response format');
+        setError('Unexpected response format');
       }
     } catch (err) {
-      console.error('Axios error details:', {
-        url,
-        message: err.message,
-        status: err.response?.status,
-        data: err.response?.data,
-      });
-
+      console.error('Fetch error:', err);
       setError(
         err.code === 'ECONNABORTED'
           ? 'Request timed out. Please check if the server is running.'
           : err.response?.status === 404
-          ? 'Analytics endpoint not found. Check server configuration.'
+          ? 'Analytics endpoint not found.'
           : err.response?.status === 401
           ? 'Unauthorized. Please log in again.'
           : err.response?.data?.error || err.message || 'Failed to load analytics'
@@ -61,11 +65,9 @@ const ProfileAnalytics = () => {
     fetchAnalytics();
   }, [user?._id, token]);
 
-  if (loading) {
-    return <p className="text-center text-gray-500">Loading analytics...</p>;
-  }
+  if (loading) return <p className="text-center text-gray-500">Loading analytics...</p>;
 
-  if (error) {
+  if (error)
     return (
       <div className="text-center">
         <p className="text-red-600">{error}</p>
@@ -77,54 +79,105 @@ const ProfileAnalytics = () => {
         </button>
       </div>
     );
-  }
+
+  // Prepare chart data
+  const barData = analytics.map((item) => ({
+    name: item.shortUrl,
+    clicks: item.clicks,
+  }));
+
+  const COLORS = ['#4ade80', '#60a5fa', '#facc15', '#f87171'];
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl font-semibold mb-6">Your URL Analytics</h2>
+    <motion.div
+      className="p-6 max-w-5xl mx-auto"
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
+    >
+      <h2 className="text-2xl font-semibold mb-6 text-center">Your URL Analytics</h2>
+
       {analytics.length === 0 ? (
-        <p className="text-gray-600">No shortened URLs found.</p>
+        <p className="text-gray-600 text-center">No shortened URLs found.</p>
       ) : (
-        <div className="space-y-4">
-          {analytics.map((item) => (
-            <div
-              key={item._id}
-              className="border rounded-lg p-4 shadow hover:shadow-md transition"
-            >
-              <p>
-                <strong>Original URL:</strong>{' '}
-                <a
-                  href={item.originalUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-blue-600 underline"
-                >
-                  {item.originalUrl}
-                </a>
-              </p>
-              <p>
-                <strong>Short URL:</strong>{' '}
-                <a
-                  href={`${import.meta.env.VITE_API_URL}/${item.shortUrl}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-green-600 underline"
-                >
-                  {`${import.meta.env.VITE_API_URL}/${item.shortUrl}`}
-                </a>
-              </p>
-              <p>
-                <strong>Clicks:</strong> {item.clicks}
-              </p>
-              <p>
-                <strong>Created:</strong>{' '}
-                {new Date(item.createdAt).toLocaleString()}
-              </p>
-            </div>
-          ))}
-        </div>
+        <>
+          {/* Bar Chart */}
+          <h3 className="text-xl font-semibold mb-2">Clicks per URL</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={barData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Bar dataKey="clicks" fill="#4ade80" />
+            </BarChart>
+          </ResponsiveContainer>
+
+          {/* Pie Chart */}
+          <h3 className="text-xl font-semibold my-4">Click Distribution</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <PieChart>
+              <Pie
+                data={barData}
+                dataKey="clicks"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={100}
+                label
+              >
+                {barData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip />
+            </PieChart>
+          </ResponsiveContainer>
+
+          {/* URL List */}
+          <div className="space-y-4 mt-6">
+            {analytics.map((item, index) => (
+              <motion.div
+                key={item._id}
+                className="border rounded-lg p-4 shadow hover:shadow-md transition"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+              >
+                <p>
+                  <strong>Original URL:</strong>{' '}
+                  <a
+                    href={item.originalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline break-all"
+                  >
+                    {item.originalUrl}
+                  </a>
+                </p>
+                <p>
+                  <strong>Short URL:</strong>{' '}
+                  <a
+                    href={`${import.meta.env.VITE_APP_API_URL}/${item.shortUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-green-600 underline break-all"
+                  >
+                    {`${import.meta.env.VITE_APP_API_URL}/${item.shortUrl}`}
+                  </a>
+                </p>
+                <p>
+                  <strong>Clicks:</strong> {item.clicks}
+                </p>
+                <p>
+                  <strong>Created:</strong>{' '}
+                  {new Date(item.createdAt).toLocaleString()}
+                </p>
+              </motion.div>
+            ))}
+          </div>
+        </>
       )}
-    </div>
+    </motion.div>
   );
 };
 

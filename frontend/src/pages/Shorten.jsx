@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { motion } from 'framer-motion'; // 👈 import motion
 
 const Shorten = () => {
   const [originalUrl, setOriginalUrl] = useState('');
@@ -20,12 +21,11 @@ const Shorten = () => {
         : { withCredentials: true };
 
       const res = await axios.post(
-        `${import.meta.env.VITE_APP_API_URL}/shorten`, // VITE_APP_API_URL should be http://localhost:3000
+        `${import.meta.env.VITE_APP_API_URL}/shorten`,
         { originalUrl },
         config
       );
 
-      // Assuming the backend returns { shortUrl: 'QfA2hC7c' }
       const fullShortUrl = `${import.meta.env.VITE_APP_API_URL}/${res.data.shortUrl}`;
       setShortUrl(fullShortUrl);
     } catch (err) {
@@ -34,45 +34,61 @@ const Shorten = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <form
-        onSubmit={handleShorten}
-        className="bg-white p-6 rounded shadow-md w-96"
+    <div className="flex flex-col items-center justify-center h-screen bg-gray-50">
+      {/* motion.div wrapper for the form */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
       >
-        <h2 className="text-2xl font-bold mb-4 text-center">Shorten a URL</h2>
-        <input
-          type="url"
-          value={originalUrl}
-          onChange={(e) => setOriginalUrl(e.target.value)}
-          placeholder="Enter original URL"
-          className="w-full mb-3 p-2 border rounded"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+        <form
+          onSubmit={handleShorten}
+          className="bg-white p-6 rounded shadow-md w-96"
         >
-          Shorten
-        </button>
+          <h2 className="text-2xl font-bold mb-4 text-center">
+            Shorten a URL
+          </h2>
+          <input
+            type="url"
+            value={originalUrl}
+            onChange={(e) => setOriginalUrl(e.target.value)}
+            placeholder="Enter original URL"
+            className="w-full mb-3 p-2 border rounded"
+            required
+          />
+          <motion.button
+            type="submit"
+            className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            Shorten
+          </motion.button>
 
-        {error && (
-          <p className="mt-2 text-red-600 text-center">{error}</p>
-        )}
+          {error && (
+            <p className="mt-2 text-red-600 text-center">{error}</p>
+          )}
 
-        {shortUrl && (
-          <p className="mt-4 text-center text-green-700">
-            Short URL:{' '}
-            <a
-              href={shortUrl}
-              className="underline"
-              target="_blank"
-              rel="noopener noreferrer"
+          {shortUrl && (
+            <motion.p
+              className="mt-4 text-center text-green-700"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.5 }}
             >
-              {shortUrl}
-            </a>
-          </p>
-        )}
-      </form>
+              Short URL:{' '}
+              <a
+                href={shortUrl}
+                className="underline"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {shortUrl}
+              </a>
+            </motion.p>
+          )}
+        </form>
+      </motion.div>
     </div>
   );
 };
