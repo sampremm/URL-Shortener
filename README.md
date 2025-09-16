@@ -1,47 +1,58 @@
 
 # 🔗 URL Shortener
 
-A full-stack **URL Shortener** application that allows users to shorten long URLs, monitor analytics, and manage their links through an intuitive interface. It includes authentication, redirection, click tracking, and user-specific dashboards.
+A full-stack **URL Shortener** application that allows users to shorten long URLs, track analytics, and manage their links via an intuitive dashboard. Features include authentication, custom short URLs, redirection, click tracking, and visual analytics.
 
 ---
 
 ## 📌 Features
 
 ### 🔒 Authentication
-- Sign up, log in, and maintain sessions via JWT tokens (stored in HTTP-only cookies).
+
+* Sign up, log in, and maintain sessions using JWT tokens (stored in HTTP-only cookies).
+* Secure user dashboard and analytics access.
 
 ### ✂️ URL Shortening
-- Generate unique, shortened URLs for any valid long URL.
-- Option to create **custom short URLs**.
+
+* Generate unique, shortened URLs for any valid long URL.
+* Option to create **custom short URLs**.
 
 ### 🔁 Redirection
-- Accessing a short URL redirects to the original long URL.
-- Tracks number of clicks and timestamp data.
+
+* Accessing a short URL automatically redirects to the original URL.
+* Tracks number of clicks, timestamp history, and user activity.
 
 ### 📊 Analytics
-- Logged-in users can view analytics like:
-  - Total clicks per URL
-  - Timestamp history
-  - Most visited links
+
+* Logged-in users can view analytics like:
+
+  * Total clicks per URL
+  * Click distribution charts (Bar & Pie)
+  * Timestamp history of clicks
+  * Most visited links
 
 ---
 
 ## 🛠️ Tech Stack
 
 ### Backend
-- **Node.js**, **Express.js**
-- **MongoDB**, **Mongoose**
-- **JWT**, **Cookie-parser**, **CORS**
-- **Rate Limiting** (`rate-limiter-flexible`)
-- **Redis** (optional for caching and rate limiting)
+
+* **Node.js**, **Express.js**
+* **MongoDB**, **Mongoose**
+* **JWT** for authentication
+* **Cookie-parser**, **CORS**
+* **Rate Limiting** (`rate-limiter-flexible`)
+* **Redis** (optional for caching and rate limiting)
 
 ### Frontend
-- **React.js** with **Vite**
-- **Axios** for API communication
-- **TailwindCSS** for styling
-- **React Router** for navigation
-- **Private Routes** with authentication guard
-- **Responsive Design**
+
+* **React.js** (Vite)
+* **Axios** for API communication
+* **TailwindCSS** for styling
+* **React Router v6** for navigation
+* **Recharts** for visual analytics
+* **Private Routes** for auth-guarded pages
+* Responsive design for mobile & desktop
 
 ---
 
@@ -50,56 +61,59 @@ A full-stack **URL Shortener** application that allows users to shorten long URL
 ### 📦 Backend
 
 1. Clone the repository and navigate to the backend folder:
-   ```bash
-   git clone https://github.com/sampremm/URL-Shortener.git
-   cd URL-Shortener/backend
-````
+
+```bash
+git clone https://github.com/sampremm/URL-Shortener.git
+cd URL-Shortener/backend
+```
 
 2. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. Create a `.env` file:
 
-   ```
-   MONGO_URI=mongodb://localhost:27017/shortener
-   PORT=3000
-   JWT_SECRET=your_jwt_secret
-   ```
+```
+MONGO_URI=mongodb://localhost:27017/shortener
+PORT=3000
+JWT_SECRET=your_jwt_secret
+```
 
-4. Start the server:
+4. Start the backend server:
 
-   ```bash
-   npm start
-   ```
+```bash
+npm start
+```
 
 ### 🌐 Frontend
 
 1. Navigate to the frontend folder:
 
-   ```bash
-   cd ../frontend
-   ```
+```bash
+cd ../frontend
+```
 
 2. Install dependencies:
 
-   ```bash
-   npm install
-   ```
+```bash
+npm install
+```
 
 3. Create a `.env` file:
 
-   ```
-   VITE_API_BASE_URL=http://localhost:3000
-   ```
+```
+VITE_APP_API_URL=http://localhost:3000
+```
 
 4. Run the React app:
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm run dev
+```
+
+5. Open the app in your browser at `http://localhost:5173`.
 
 ---
 
@@ -107,7 +121,7 @@ A full-stack **URL Shortener** application that allows users to shorten long URL
 
 ### Auth Routes
 
-* `POST /url/auth/signup` – Register user
+* `POST /url/auth/signup` – Register a new user
 * `POST /url/auth/login` – Login and receive JWT
 * `POST /url/auth/logout` – Clear auth token
 
@@ -132,12 +146,13 @@ A full-stack **URL Shortener** application that allows users to shorten long URL
 
 ---
 
-## 🔐 Middleware
+## 📊 Analytics with Charts
 
-* **Rate Limiting**: Protects API endpoints from abuse.
-* **CORS**: Allows frontend on `http://localhost:5173` to access backend.
-* **Cookie Parser**: Parses JWT from cookies.
-* **Auth Middleware**: Validates and extracts user data from token.
+* **Bar Chart:** Clicks per URL
+* **Pie Chart:** Click distribution among links
+* **List View:** Original URL, Short URL, Click count, Created date
+
+> Implemented using **Recharts**: `BarChart`, `PieChart`, `Tooltip`, and `ResponsiveContainer`.
 
 ---
 
@@ -157,6 +172,7 @@ URL-Shortener/
     ├── src/
     │   ├── components/
     │   ├── pages/
+    │   ├── context/
     │   ├── hooks/
     │   └── App.jsx
     └── index.html
@@ -164,19 +180,10 @@ URL-Shortener/
 
 ---
 
-## 📜 License
+## 🔐 Middleware
 
-This project is licensed under the MIT License.
-See the [LICENSE](LICENSE) file for details.
+* **Rate Limiting:** Protects endpoints from abuse.
+* **CORS:** Allows frontend to access backend.
+* **Cookie Parser:** Parses JWT from cookies.
+* **Auth Middleware:** Validates user tokens and protects routes.
 
----
-
-## 👨‍💻 Author
-
-**Sam Prem Kumar Thalla**
-🔗 [GitHub](https://github.com/sampremm) | 📷 [Photography](https://instagram.com/) *(if you'd like to include it)*
-
-```
-
-Would you like me to generate the frontend `README.md` separately as well with screenshots and GIF placeholders?
-```
