@@ -7,57 +7,77 @@ const Home = () => {
   const { user } = useAuth();
 
   return (
-    // Animate the entire section
+    // Full screen section with animated gradient background
     <motion.div
-      initial={{ opacity: 0, y: -20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-indigo-200 to-purple-300 p-8"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.8 }}
+      className="relative flex flex-col items-center justify-center min-h-screen overflow-hidden"
     >
-      {/* Animated logo */}
-      <img
-        src={logo}
-        alt="logo"
-        className="w-40 h-40 mb-6 animate-bounce"
-      />
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 via-purple-400 to-pink-400 animate-gradient-x"></div>
 
-      {/* Animated heading */}
-      <motion.h1
-        initial={{ opacity: 0, y: -10 }}
+      {/* Optional gradient overlay animation */}
+      <style>
+        {`
+        @keyframes gradient-x {
+          0%, 100% {background-position:0% 50%}
+          50% {background-position:100% 50%}
+        }
+        .animate-gradient-x {
+          background-size: 200% 200%;
+          animation: gradient-x 8s ease infinite;
+        }
+        `}
+      </style>
+
+      {/* Content container with glass effect */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="text-4xl font-bold text-gray-900 mb-4"
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="relative z-10 flex flex-col items-center bg-white/20 backdrop-blur-lg rounded-3xl p-10 shadow-xl"
       >
-        Welcome to URL Shortener
-      </motion.h1>
+        {/* Animated logo */}
+        <img src={logo} alt="logo" className="w-32 h-32 mb-6 animate-bounce" />
 
-      {user ? (
-        <p className="text-lg">
-          Hello, <strong>{user.email}</strong>! Go to your{' '}
-          <Link to="/profile" className="text-blue-600 underline">
-            Profile
-          </Link>.
-        </p>
-      ) : (
-        <div className="flex space-x-4">
-          <Link
-            to="/login"
-            className="bg-blue-500 text-white px-4 py-2 rounded 
-                       transition duration-300 transform 
-                       hover:scale-105 hover:bg-blue-600"
-          >
-            Login
-          </Link>
-          <Link
-            to="/signup"
-            className="bg-green-500 text-white px-4 py-2 rounded 
-                       transition duration-300 transform 
-                       hover:scale-105 hover:bg-green-600"
-          >
-            Register
-          </Link>
-        </div>
-      )}
+        {/* Gradient heading */}
+        <motion.h1
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="text-4xl font-extrabold mb-4 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
+        >
+          Welcome to URL Shortener
+        </motion.h1>
+
+        {user ? (
+          <p className="text-lg text-gray-900">
+            Hello, <strong>{user.email}</strong>! Go to your{' '}
+            <Link
+              to="/profile"
+              className="text-purple-700 underline hover:text-pink-600 transition"
+            >
+              Profile
+            </Link>.
+          </p>
+        ) : (
+          <div className="flex space-x-4 mt-4">
+            <Link
+              to="/login"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-5 py-2 rounded-xl shadow-md transition transform hover:scale-105 hover:shadow-lg"
+            >
+              Login
+            </Link>
+            <Link
+              to="/signup"
+              className="bg-gradient-to-r from-green-400 to-emerald-600 text-white px-5 py-2 rounded-xl shadow-md transition transform hover:scale-105 hover:shadow-lg"
+            >
+              Register
+            </Link>
+          </div>
+        )}
+      </motion.div>
     </motion.div>
   );
 };
