@@ -41,7 +41,6 @@ A full-stack **URL Shortener** application that allows users to shorten long URL
 * **MongoDB**, **Mongoose**
 * **JWT** for authentication
 * **Cookie-parser**, **CORS**
-* **Rate Limiting** (`rate-limiter-flexible`)
 * **Redis** (optional for caching and rate limiting)
 
 ### Frontend
