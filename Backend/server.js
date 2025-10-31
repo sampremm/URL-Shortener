@@ -9,7 +9,7 @@ import connectRedis from "./config/redis.js";
 
 
 dotenv.config();
-
+connectRedis();
 
 const port = process.env.PORT || 3000;
 const app = express();  

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'framer-motion';
+import axiosInstance from '../api/axiosInstance';
 import {
   BarChart,
   Bar,
@@ -33,9 +34,9 @@ const ProfileAnalytics = () => {
     const url = `${baseURL}/analytics/${user._id}`;
     console.log(url);
     try {
-      const res = await axios.get(url, {
+      const res = await axiosInstance.get(url, {
         headers: { Authorization: `Bearer ${token}` },
-        timeout: 10000,
+        withCredentials: true,
       });
 
       if (Array.isArray(res.data)) {

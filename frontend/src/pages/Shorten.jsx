@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
-import { motion } from 'framer-motion'; // 👈 import motion
-
+import { motion } from 'framer-motion'; 
+import axiosInstance from '../api/axiosInstance';
 const Shorten = () => {
   const [originalUrl, setOriginalUrl] = useState('');
   const [shortUrl, setShortUrl] = useState('');
@@ -20,11 +20,13 @@ const Shorten = () => {
           }
         : { withCredentials: true };
 
-      const res = await axios.post(
-        `${import.meta.env.VITE_APP_API_URL}/shorten`,
-        { originalUrl },
-        config
-      );
+      // const res = await axios.post(
+      //   `${import.meta.env.VITE_APP_API_URL}/shorten`,
+      //   { originalUrl },
+      //   config
+      // );
+
+      const res = await axiosInstance.post('/url/shorten', { originalUrl }, config);
 
       const fullShortUrl = `${import.meta.env.VITE_APP_API_URL}/${res.data.shortUrl}`;
       setShortUrl(fullShortUrl);

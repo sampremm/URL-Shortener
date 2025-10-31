@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { motion } from 'framer-motion'; // <-- import motion
+import axiosInstance from '../api/axiosInstance';
 
 const Signup = () => {
   const [email, setEmail] = useState('');
@@ -11,12 +12,10 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        "http://localhost:3000/url/auth/register",
-        { email, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
+      const res = await axiosInstance.post('/url/auth/register', {
+        email,
+        password,
+      });
       console.log(res.data);
       alert('Signup successful');
       const token = res.data.token;

@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import axiosInstance from '../api/axiosInstance.js';
 
 const AuthContext = createContext();
 
@@ -11,7 +12,7 @@ export const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
       if (token) {
         try {
-          const res = await axios.get('http://localhost:3000/url/auth/profile', {
+          const res = await axiosInstance.get('/url/auth/profile', {
             headers: { Authorization: `Bearer ${token}` },
           });
           setUser(res.data);

@@ -1,189 +1,187 @@
-
 # 🔗 URL Shortener
 
-A full-stack **URL Shortener** application that allows users to shorten long URLs, track analytics, and manage their links via an intuitive dashboard. Features include authentication, custom short URLs, redirection, click tracking, and visual analytics.
+A full‑stack URL shortener built with Node/Express (backend) and React + Vite (frontend).  
+Features: authenticated link creation, redirection, click tracking, Redis caching, and per‑link analytics (charts).
 
 ---
 
-## 📌 Features
+## Table of contents
 
-### 🔒 Authentication
-
-* Sign up, log in, and maintain sessions using JWT tokens (stored in HTTP-only cookies).
-* Secure user dashboard and analytics access.
-
-### ✂️ URL Shortening
-
-* Generate unique, shortened URLs for any valid long URL.
-* Option to create **custom short URLs**.
-
-### 🔁 Redirection
-
-* Accessing a short URL automatically redirects to the original URL.
-* Tracks number of clicks, timestamp history, and user activity.
-
-### 📊 Analytics
-
-* Logged-in users can view analytics like:
-
-  * Total clicks per URL
-  * Click distribution charts (Bar & Pie)
-  * Timestamp history of clicks
-  * Most visited links
+- About
+- Features
+- Tech stack
+- Local setup (backend / frontend)
+- Environment variables
+- API (backend)
+- Frontend routes
+- Implementation notes & troubleshooting
+- Folder structure
+- License
 
 ---
 
-## 🛠️ Tech Stack
+## About
+
+This project lets users shorten long URLs and track clicks/analytics. Authentication uses JWT stored in HTTP‑only cookies (recommended). Redis is used for caching redirects and analytics for performance.
+
+---
+
+## Features
+
+- Sign up / Login with JWT (HTTP‑only cookie)
+- Shorten URLs (unique id via nanoid)
+- Redirect via short URL (server side redirect)
+- Click count tracking stored in MongoDB
+- Analytics endpoint per short id (cached in Redis)
+- Protected routes for user dashboard
+- Frontend UI with copy / redirect buttons and analytics charts (Recharts)
+
+---
+
+## Tech stack
+
+- Backend: Node.js, Express, Mongoose (MongoDB), Redis, JWT
+- Frontend: React (Vite), Axios, TailwindCSS, Recharts, Framer Motion
+- Dev tooling: nodemon, concurrently (optional)
+
+---
+
+## Local setup
+
+Prerequisites: Node 18+, npm, MongoDB, Redis.
+
+1. Clone repo
+   ```bash
+   git clone <repo-url>
+   cd link
+   ```
 
 ### Backend
 
-* **Node.js**, **Express.js**
-* **MongoDB**, **Mongoose**
-* **JWT** for authentication
-* **Cookie-parser**, **CORS**
-* **Rate Limiting** (`rate-limiter-flexible`)
-* **Redis** (optional for caching and rate limiting)
+1. Install
+   ```bash
+   cd Backend
+   npm install
+   ```
+2. Create `.env` (see Environment variables below).
+3. Start server
+   ```bash
+   npm run dev
+   ```
+   Backend runs on PORT (default `3000`).
 
 ### Frontend
 
-* **React.js** (Vite)
-* **Axios** for API communication
-* **TailwindCSS** for styling
-* **React Router v6** for navigation
-* **Recharts** for visual analytics
-* **Private Routes** for auth-guarded pages
-* Responsive design for mobile & desktop
+1. Install
+   ```bash
+   cd frontend
+   npm install
+   ```
+2. Create `.env` (see Environment variables below).
+3. Start dev server
+   ```bash
+   npm run dev
+   ```
+   Frontend runs on Vite default (e.g. `http://localhost:5173`).
 
 ---
 
-## ⚙️ Setup Instructions
+## Environment variables
 
-### 📦 Backend
+Backend (`Backend/.env`)
+- MONGO_URI=mongodb://localhost:27017/shortener
+- PORT=3000
+- JWT_SECRET=your_jwt_secret
+- REDIS_URL=redis://localhost:6379 (if used)
+- NODE_ENV=development
 
-1. Clone the repository and navigate to the backend folder:
+Frontend (`frontend/.env`)
+- VITE_APP_API_URL=http://localhost:3000/url
 
-```bash
-git clone https://github.com/sampremm/URL-Shortener.git
-cd URL-Shortener/backend
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a `.env` file:
-
-```
-MONGO_URI=mongodb://localhost:27017/shortener
-PORT=3000
-JWT_SECRET=your_jwt_secret
-```
-
-4. Start the backend server:
-
-```bash
-npm start
-```
-
-### 🌐 Frontend
-
-1. Navigate to the frontend folder:
-
-```bash
-cd ../frontend
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Create a `.env` file:
-
-```
-VITE_APP_API_URL=http://localhost:3000
-```
-
-4. Run the React app:
-
-```bash
-npm run dev
-```
-
-5. Open the app in your browser at `http://localhost:5173`.
+Notes:
+- Backend sets JWT cookie on authentication. Frontend must call axios with `{ withCredentials: true }` when logging in and when making protected requests to allow cookies to be sent.
+- If you change base URL structure, update axiosInstance and VITE_APP_API_URL accordingly.
 
 ---
 
-## 🔌 API Endpoints (Backend)
+## API Endpoints
 
-### Auth Routes
+Base: `${VITE_APP_API_URL}` points to `http://localhost:3000/url` by default.
 
-* `POST /url/auth/signup` – Register a new user
-* `POST /url/auth/login` – Login and receive JWT
-* `POST /url/auth/logout` – Clear auth token
+Auth
+- POST `/url/auth/signup` — Register (returns success; cookie set on login)
+- POST `/url/auth/login` — Login (sets HTTP‑only cookie `jwt`)
+- POST `/url/auth/logout` — Logout (clears cookie)
 
-### URL Management
+URL Management
+- POST `/url/shorten` — Create short URL (protected; expects `{ originalUrl }` in body)
+  - Response: `{ message, shortUrl, originalUrl }` — shortUrl is the id (e.g. `cgZEzUVu`)
+- GET `/url/:shortId` — Redirect to original URL (server does res.redirect)
+- GET `/url/profile` — Get all URLs for logged in user (protected)
+- GET `/url/analytics/:shortId` — Get analytics for a specific short id (cached in Redis)
 
-* `POST /url/shorten` – Shorten a new URL (auth required)
-* `GET /url/:shortId` – Redirect to original URL
-* `GET /url/profile` – Get all shortened URLs for logged-in user
-* `GET /url/analytics/:shortId` – View analytics for a specific URL
-
----
-
-## 🧩 Frontend Routes
-
-| Path             | Description                   | Auth Required |
-| ---------------- | ----------------------------- | ------------- |
-| `/`              | Home / Shorten a URL          | ✅             |
-| `/login`         | Login page                    | ❌             |
-| `/signup`        | Sign up page                  | ❌             |
-| `/profile`       | View your links & analytics   | ✅             |
-| `/analytics/:id` | View analytics of a short URL | ✅             |
+Backend details:
+- `shorten` saves to MongoDB and caches mapping in Redis.
+- `redirect` checks Redis first, falls back to DB, increments clicks, and `res.redirect(originalUrl)`.
+- `analytics` returns: `{ originalUrl, shortUrl, clicks, createdAt, ip, userAgent, referrer }` and caches result for 1 hour.
 
 ---
 
-## 📊 Analytics with Charts
+## Frontend routes
 
-* **Bar Chart:** Clicks per URL
-* **Pie Chart:** Click distribution among links
-* **List View:** Original URL, Short URL, Click count, Created date
+- `/` or `/shorten` — Shorten a URL (public / authenticated)
+- `/login` — Login form
+- `/signup` — Signup
+- `/profile` — Profile / list of user links (protected)
+- `/analytics/:id` — Analytics view for a specific short id (protected)
 
-> Implemented using **Recharts**: `BarChart`, `PieChart`, `Tooltip`, and `ResponsiveContainer`.
+UI notes:
+- After login, frontend should send `{ withCredentials: true }` so the HTTP‑only cookie is stored by the browser.
+- For redirect testing in the browser use the actual redirect endpoint (e.g. `http://localhost:3000/url/<shortId>`). The frontend can open that URL directly (window.open or anchor tag).
 
 ---
 
-## 📁 Folder Structure
+## Implementation notes & troubleshooting
+
+- If you see "Not authorized, no token": backend `protect` middleware checks `Authorization` header OR `req.cookies.jwt`. Ensure:
+  - Login request includes `{ withCredentials: true }` so the backend can set the cookie.
+  - Subsequent protected requests include `{ withCredentials: true }`.
+  - CORS on backend must include `{ origin: 'http://localhost:5173', credentials: true }`.
+- Redirects: axios requests will not cause a browser redirect. To follow a server redirect in the client, use `window.location.href = redirectUrl` or open the backend redirect endpoint in a new tab (anchor or window.open).
+- Short URL format:
+  - Backend returns only the short id (e.g. `shortUrl: "cgZEzUVu"`). Frontend composes the clickable URL as `${VITE_APP_API_URL}/url/${shortId}` (or `${window.location.origin}/${shortId}` depending on desired domain).
+- Redis cache keys:
+  - `originalUrl` → shortId (set on shorten)
+  - `shortId` → originalUrl (set on first redirect)
+  - `analytics:<shortId>` → JSON analytics (cached 1 hour)
+
+---
+
+## Quick debugging checklist
+
+- Backend running? `http://localhost:3000` reachable.
+- MongoDB and Redis running.
+- `.env` values correct.
+- Login request includes `withCredentials`.
+- Inspect cookies in browser dev tools (Application → Cookies).
+- Network tab for analytics/shorten requests — check responses and status codes.
+
+---
+
+## Folder structure
 
 ```
-URL-Shortener/
-│
-├── backend/
-│   ├── controllers/
-│   ├── models/
-│   ├── routes/
-│   ├── middleware/
-│   └── server.js
-│
-└── frontend/
-    ├── src/
-    │   ├── components/
-    │   ├── pages/
-    │   ├── context/
-    │   ├── hooks/
-    │   └── App.jsx
-    └── index.html
+link/
+├─ Backend/         # Express app, controllers, models, middleware
+├─ frontend/        # React (Vite) app
+└─ README.md
 ```
 
 ---
 
-## 🔐 Middleware
+## License
 
-* **Rate Limiting:** Protects endpoints from abuse.
-* **CORS:** Allows frontend to access backend.
-* **Cookie Parser:** Parses JWT from cookies.
-* **Auth Middleware:** Validates user tokens and protects routes.
+MIT
+
+---
 

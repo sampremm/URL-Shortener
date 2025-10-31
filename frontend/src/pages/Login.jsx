@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import axios from 'axios';
 import { motion } from 'framer-motion';
-
+import axiosInstance from '../api/axiosInstance';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -13,11 +12,10 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(
-        `${import.meta.env.VITE_APP_API_URL}/auth/login`,
-        { email, password },
-        { withCredentials: true }
-      );
+      const res = await axiosInstance.post('/url/auth/login', {
+        email,
+        password,
+      });
       const token = res.data.token;
       localStorage.setItem('token', token);
       setUser(res.data);
