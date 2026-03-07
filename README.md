@@ -38,11 +38,26 @@ This project lets users shorten long URLs and track clicks/analytics. Authentica
 
 ---
 
-## Tech stack
+## 🛠️ Tech Stack
 
-- Backend: Node.js, Express, Mongoose (MongoDB), Redis, JWT
-- Frontend: React (Vite), Axios, TailwindCSS, Recharts, Framer Motion
-- Dev tooling: nodemon, concurrently (optional)
+### Backend
+
+* **Node.js**, **Express.js**
+* **MongoDB**, **Mongoose**
+* **JWT** for authentication
+* **Cookie-parser**, **CORS**
+* **Rate Limiting** (`rate-limiter-flexible`)
+* **Redis** (optional for caching and rate limiting)
+
+### Frontend
+
+* **React.js** (Vite)
+* **Axios** for API communication
+* **TailwindCSS** for styling
+* **React Router v6** for navigation
+* **Recharts** for visual analytics
+* **Private Routes** for auth-guarded pages
+* Responsive design for mobile & desktop
 
 ---
 

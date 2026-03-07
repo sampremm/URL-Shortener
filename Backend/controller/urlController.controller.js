@@ -1,6 +1,6 @@
 import { nanoid } from 'nanoid';
 import Url from '../model/url.js';
-import client from '../config/redisClient.js';
+import client from '../config/redis.js';
 import mongoose from 'mongoose';
 
 
