@@ -27,7 +27,8 @@ const Signup = () => {
       await axiosInstance.post('/url/auth/register', { email, password });
       navigate('/login');
     } catch (err) {
-      setError(err.response?.data?.error || 'Registration failed. Please try again.');
+      const msg = err.response?.data?.error;
+      setError(typeof msg === 'string' ? msg : 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }

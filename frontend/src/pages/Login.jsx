@@ -33,7 +33,8 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed. Please try again.');
+      const msg = err.response?.data?.error;
+      setError(typeof msg === 'string' ? msg : 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
