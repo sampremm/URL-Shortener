@@ -24,7 +24,16 @@ const urlSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: 'User', // link to User collection
-      required: [true, 'User ID is required'],
+      required: false,
+    },
+    isCustom: {
+      type: Boolean,
+      default: false,
+    },
+    expiresAt: {
+      type: Date,
+      default: null,
+      index: true, // helps with cron cleanup later
     },
   },
   {

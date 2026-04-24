@@ -2,15 +2,12 @@ import React from 'react';
 import { BrowserRouter, useLocation } from 'react-router-dom';
 import AppRouter from './router/Router';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 
-// Separate component so we can use hooks like useLocation
 const AppContent = () => {
   const location = useLocation();
-
-  // Add any paths where you don't want the navbar
-  const hideNavbarOn = ['/']; // home page
-
+  const hideNavbarOn = ['/'];
   const hideNavbar = hideNavbarOn.includes(location.pathname);
 
   return (
@@ -22,11 +19,13 @@ const AppContent = () => {
 };
 
 const App = () => (
-  <AuthProvider>
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
-  </AuthProvider>
+  <ThemeProvider>
+    <AuthProvider>
+      <BrowserRouter>
+        <AppContent />
+      </BrowserRouter>
+    </AuthProvider>
+  </ThemeProvider>
 );
 
 export default App;

@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+  # Load Balancer
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "3000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+
+  # Web Servers (Replicas)
+  backend:
+    build:
+      context: ./Backend
+    deploy:
+      replicas: 3
+    environment:
+      - DATABASE_URL=mongodb://mongos:27017/shortener
+      - REDIS_URL=redis://redis:6379
+      - KEY_SERVICE_URL=http://keyservice:4000
+      - JWT_SECRET=f7a9d4e8b3c2a6f1d7e5c9a4b8d3f6e2
+    depends_on:
+      - mongos
+      - redis
+      - keyservice
+
+  # Key Generation Service
+  keyservice:
+    build:
+      context: ./KeyService
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_DATABASE=keys_db
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # Keys Database (MySQL)
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=keys_db
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Distributed Cache
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  # --- MongoDB Sharded Cluster ---
+  mongocfg:
+    image: mongo:7.0
+    command: mongod --configsvr --replSet cfg --port 27017 --bind_ip_all
+    ports:
+      - "27019:27017"
+
+  shard1:
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet shard1 --port 27017 --bind_ip_all
+    ports:
+      - "27020:27017"
+
+  shard2:
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet shard2 --port 27017 --bind_ip_all
+    ports:
+      - "27021:27017"
+
+  shard3:
+    image: mongo:7.0
+    command: mongod --shardsvr --replSet shard3 --port 27017 --bind_ip_all
+    ports:
+      - "27022:27017"
+
+  mongos:
+    image: mongo:7.0
+    command: mongos --configdb cfg/mongocfg:27017 --bind_ip_all
+    ports:
+      - "27017:27017"
+    depends_on:
+      - mongocfg
+      - shard1
+      - shard2
+      - shard3
+
+  mongo-init:
+    image: mongo:7.0
+    depends_on:
+      - mongos
+    command: >
+      bash -c "
+      sleep 15 &&
+      mongosh --host mongocfg:27017 --eval 'rs.initiate({_id: \"cfg\", configsvr: true, members: [{_id: 0, host: \"mongocfg:27017\"}]})' &&
+      mongosh --host shard1:27017 --eval 'rs.initiate({_id: \"shard1\", members: [{_id: 0, host: \"shard1:27017\"}]})' &&
+      mongosh --host shard2:27017 --eval 'rs.initiate({_id: \"shard2\", members: [{_id: 0, host: \"shard2:27017\"}]})' &&
+      mongosh --host shard3:27017 --eval 'rs.initiate({_id: \"shard3\", members: [{_id: 0, host: \"shard3:27017\"}]})' &&
+      sleep 15 &&
+      mongosh --host mongos:27017 --eval 'sh.addShard(\"shard1/shard1:27017\"); sh.addShard(\"shard2/shard2:27017\"); sh.addShard(\"shard3/shard3:27017\"); sh.enableSharding(\"shortener\"); sh.shardCollection(\"shortener.urls\", { shortUrl: \"hashed\" })'
+      "

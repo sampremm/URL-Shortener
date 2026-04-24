@@ -1,202 +1,140 @@
-# 🔗 URL Shortener
+# SnapLink – Distributed URL Shortener SaaS
 
-A full‑stack URL shortener built with Node/Express (backend) and React + Vite (frontend).  
-Features: authenticated link creation, redirection, click tracking, Redis caching, and per‑link analytics (charts).
-
----
-
-## Table of contents
-
-- About
-- Features
-- Tech stack
-- Local setup (backend / frontend)
-- Environment variables
-- API (backend)
-- Frontend routes
-- Implementation notes & troubleshooting
-- Folder structure
-- License
+**SnapLink** is a production-grade, minimalist URL shortener designed with a distributed architecture. It demonstrates a high-performance backend capable of horizontal scaling, integrated with a premium, responsive frontend.
 
 ---
 
-## About
+## 🚀 Overview
 
-This project lets users shorten long URLs and track clicks/analytics. Authentication uses JWT stored in HTTP‑only cookies (recommended). Redis is used for caching redirects and analytics for performance.
+SnapLink isn't just a URL shortener; it's a showcase of modern engineering. It features a distributed backend orchestrated by **Docker Compose**, utilizing **NGINX** for load balancing across multiple stateless **Node.js/Express** replicas. Data persistence is handled via a **sharded MongoDB** cluster for URLs, a **MySQL-based Key Generation Service** for unique IDs, and **Redis** for sub-millisecond caching.
 
 ---
 
-## Features
+## ✨ Features
 
-- Sign up / Login with JWT (HTTP‑only cookie)
-- Shorten URLs (unique id via nanoid)
-- Redirect via short URL (server side redirect)
-- Click count tracking stored in MongoDB
-- Analytics endpoint per short id (cached in Redis)
-- Protected routes for user dashboard
-- Frontend UI with copy / redirect buttons and analytics charts (Recharts)
+### 🎨 Frontend (Premium UI/UX)
+- **Minimalist SaaS Aesthetic** – Clean, professional design focused on usability.
+- **Dark & Light Mode** – Full theme support with system persistence.
+- **Micro-Animations** – Staggered transitions, hover effects, and spring-based interactions powered by `framer-motion`.
+- **Responsive Design** – Fully optimized for Mobile, Tablet, and Desktop.
+- **Analytics Dashboard** – Detailed click tracking with data visualization using `recharts`.
+- **Zero-Friction UX** – Anonymous link creation (temporary) or account-based management (persistent).
+
+### ⚙️ Backend (Distributed Architecture)
+- **Horizontal Scaling** – NGINX load balancer distributing traffic across 3 Express replicas.
+- **Distributed ID Generation** – Dedicated Key Service using MySQL to prevent ID collisions across pods.
+- **High Availability** – MongoDB sharding and Redis caching for optimal performance and uptime.
+- **Swagger Documentation** – Interactive API explorer at `/api-docs`.
+- **Stateless Auth** – JWT-based authentication with optional protection for guest usage.
+
+---
+
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    Client[Client Browser] --> Nginx[NGINX Load Balancer]
+    Nginx -- Round Robin --> Pod1[Express Replica 1]
+    Nginx -- Round Robin --> Pod2[Express Replica 2]
+    Nginx -- Round Robin --> Pod3[Express Replica 3]
+
+    Pod1 & Pod2 & Pod3 --> Redis[(Redis Cache)]
+    Pod1 & Pod2 & Pod3 --> KeyService[Key Generation Service - MySQL]
+    Pod1 & Pod2 & Pod3 --> Mongo[(Sharded MongoDB)]
+```
+
+- **Load Balancer**: NGINX (Port 3000) acts as the entry point, routing requests to backend pods.
+- **Caching Layer**: Redis stores frequently accessed URLs to minimize database hits.
+- **Persistence**: MongoDB stores URL mappings, while MySQL manages the sequence for unique key generation.
 
 ---
 
 ## 🛠️ Tech Stack
 
-### Backend
-
-* **Node.js**, **Express.js**
-* **MongoDB**, **Mongoose**
-* **JWT** for authentication
-* **Cookie-parser**, **CORS**
-* **Rate Limiting** (`rate-limiter-flexible`)
-* **Redis** (optional for caching and rate limiting)
-
-### Frontend
-
-* **React.js** (Vite)
-* **Axios** for API communication
-* **TailwindCSS** for styling
-* **React Router v6** for navigation
-* **Recharts** for visual analytics
-* **Private Routes** for auth-guarded pages
-* Responsive design for mobile & desktop
+- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, Recharts, Axios.
+- **Backend**: Node.js, Express, Mongoose, JWT.
+- **Infrastructure**: Docker, Docker Compose, NGINX.
+- **Databases**: MongoDB (Sharded), MySQL, Redis.
 
 ---
 
-## Local setup
+## 📦 Getting Started
 
-Prerequisites: Node 18+, npm, MongoDB, Redis.
+### Prerequisites
+- Docker & Docker Compose
+- Node.js 18+ (for local development)
 
-1. Clone repo
-   ```bash
-   git clone <repo-url>
-   cd link
-   ```
-
-### Backend
-
-1. Install
-   ```bash
-   cd Backend
-   npm install
-   ```
-2. Create `.env` (see Environment variables below).
-3. Start server
-   ```bash
-   npm run dev
-   ```
-   Backend runs on PORT (default `3000`).
-
-### Frontend
-
-1. Install
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. Create `.env` (see Environment variables below).
-3. Start dev server
-   ```bash
-   npm run dev
-   ```
-   Frontend runs on Vite default (e.g. `http://localhost:5173`).
-
----
-
-## Environment variables
-
-Backend (`Backend/.env`)
-- MONGO_URI=mongodb://localhost:27017/shortener
-- PORT=3000
-- JWT_SECRET=your_jwt_secret
-- REDIS_URL=redis://localhost:6379 (if used)
-- NODE_ENV=development
-
-Frontend (`frontend/.env`)
-- VITE_APP_API_URL=http://localhost:3000/url
-
-Notes:
-- Backend sets JWT cookie on authentication. Frontend must call axios with `{ withCredentials: true }` when logging in and when making protected requests to allow cookies to be sent.
-- If you change base URL structure, update axiosInstance and VITE_APP_API_URL accordingly.
-
----
-
-## API Endpoints
-
-Base: `${VITE_APP_API_URL}` points to `http://localhost:3000/url` by default.
-
-Auth
-- POST `/url/auth/signup` — Register (returns success; cookie set on login)
-- POST `/url/auth/login` — Login (sets HTTP‑only cookie `jwt`)
-- POST `/url/auth/logout` — Logout (clears cookie)
-
-URL Management
-- POST `/url/shorten` — Create short URL (protected; expects `{ originalUrl }` in body)
-  - Response: `{ message, shortUrl, originalUrl }` — shortUrl is the id (e.g. `cgZEzUVu`)
-- GET `/url/:shortId` — Redirect to original URL (server does res.redirect)
-- GET `/url/profile` — Get all URLs for logged in user (protected)
-- GET `/url/analytics/:shortId` — Get analytics for a specific short id (cached in Redis)
-
-Backend details:
-- `shorten` saves to MongoDB and caches mapping in Redis.
-- `redirect` checks Redis first, falls back to DB, increments clicks, and `res.redirect(originalUrl)`.
-- `analytics` returns: `{ originalUrl, shortUrl, clicks, createdAt, ip, userAgent, referrer }` and caches result for 1 hour.
-
----
-
-## Frontend routes
-
-- `/` or `/shorten` — Shorten a URL (public / authenticated)
-- `/login` — Login form
-- `/signup` — Signup
-- `/profile` — Profile / list of user links (protected)
-- `/analytics/:id` — Analytics view for a specific short id (protected)
-
-UI notes:
-- After login, frontend should send `{ withCredentials: true }` so the HTTP‑only cookie is stored by the browser.
-- For redirect testing in the browser use the actual redirect endpoint (e.g. `http://localhost:3000/url/<shortId>`). The frontend can open that URL directly (window.open or anchor tag).
-
----
-
-## Implementation notes & troubleshooting
-
-- If you see "Not authorized, no token": backend `protect` middleware checks `Authorization` header OR `req.cookies.jwt`. Ensure:
-  - Login request includes `{ withCredentials: true }` so the backend can set the cookie.
-  - Subsequent protected requests include `{ withCredentials: true }`.
-  - CORS on backend must include `{ origin: 'http://localhost:5173', credentials: true }`.
-- Redirects: axios requests will not cause a browser redirect. To follow a server redirect in the client, use `window.location.href = redirectUrl` or open the backend redirect endpoint in a new tab (anchor or window.open).
-- Short URL format:
-  - Backend returns only the short id (e.g. `shortUrl: "cgZEzUVu"`). Frontend composes the clickable URL as `${VITE_APP_API_URL}/url/${shortId}` (or `${window.location.origin}/${shortId}` depending on desired domain).
-- Redis cache keys:
-  - `originalUrl` → shortId (set on shorten)
-  - `shortId` → originalUrl (set on first redirect)
-  - `analytics:<shortId>` → JSON analytics (cached 1 hour)
-
----
-
-## Quick debugging checklist
-
-- Backend running? `http://localhost:3000` reachable.
-- MongoDB and Redis running.
-- `.env` values correct.
-- Login request includes `withCredentials`.
-- Inspect cookies in browser dev tools (Application → Cookies).
-- Network tab for analytics/shorten requests — check responses and status codes.
-
----
-
-## Folder structure
-
+### 1. Clone the Repository
+```bash
+git clone <repo-url>
+cd link
 ```
+
+### 2. Launch the Infrastructure
+```bash
+# Starts MongoDB Cluster, Redis, MySQL, NGINX, and Backend Pods
+docker compose up -d --build
+```
+
+### 3. Start the Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open [http://localhost:5173](http://localhost:5173) to see the app.
+
+---
+
+## 🧪 Testing
+
+SnapLink includes a comprehensive end-to-end test suite to ensure system stability across all distributed components.
+
+```bash
+# From the root directory
+node test-backend.js
+```
+The test suite validates:
+1. User Registration & Login.
+2. Guest URL Shortening (24h expiry).
+3. Authenticated URL Shortening (30d expiry).
+4. Redirection Logic.
+5. Real-time Click Analytics.
+
+---
+
+## 📄 API Documentation
+
+Once the backend is running, access the interactive Swagger documentation at:
+`http://localhost:3000/api-docs`
+
+---
+
+## 📁 Project Structure
+
+```text
 link/
-├─ Backend/         # Express app, controllers, models, middleware
-├─ frontend/        # React (Vite) app
-└─ README.md
+├── Backend/              # Express API replicas
+├── KeyService/           # ID Generation Service (MySQL)
+├── frontend/             # React SPA (Vite)
+│   ├── src/
+│   │   ├── components/  # Reusable UI parts
+│   │   ├── context/     # Auth & Theme providers
+│   │   └── pages/       # Home, Analytics, Login, etc.
+├── nginx.conf            # LB Configuration
+├── docker-compose.yml    # Dev orchestration
+└── test-backend.js       # E2E Test Suite
 ```
 
 ---
 
-## License
+## 🌟 Resume Highlights
 
-MIT
+- **Scalability**: Orchestrated a distributed system using NGINX and Docker, ensuring stateless backend operation.
+- **Performance**: Reduced latency by implementing a Redis caching layer for high-traffic URL redirects.
+- **Full-Stack Mastery**: Built a premium React frontend with complex state management and a robust Node.js microservices backend.
+- **System Design**: Implemented a custom Key Generation Service to handle unique ID distribution in a multi-pod environment.
 
 ---
 
+*Built with ❤️ for the modern web.*

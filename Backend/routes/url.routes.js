@@ -1,11 +1,11 @@
 import express from "express";
 import { shortenUrl, redirectUrl, getAnalytics } from "../controller/urlController.controller.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect, protectOptional } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 
-router.post("/shorten",protect, shortenUrl);
+router.post("/", protectOptional, shortenUrl);
 router.get("/analytics/:id",protect, getAnalytics);
-router.get('/:shortCode',protect, redirectUrl);
+router.get('/:shortCode', redirectUrl);
 export default router;
