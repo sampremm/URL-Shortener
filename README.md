@@ -1,140 +1,236 @@
-# SnapLink – Distributed URL Shortener SaaS
+# SnapLink — Distributed URL Shortener SaaS
 
-**SnapLink** is a production-grade, minimalist URL shortener designed with a distributed architecture. It demonstrates a high-performance backend capable of horizontal scaling, integrated with a premium, responsive frontend.
+> **Live Demo**: [url-shortener-six-sandy.vercel.app](https://url-shortener-six-sandy.vercel.app)  
+> **API**: [url-shortener-production-8a23.up.railway.app](https://url-shortener-production-8a23.up.railway.app)
 
----
-
-## 🚀 Overview
-
-SnapLink isn't just a URL shortener; it's a showcase of modern engineering. It features a distributed backend orchestrated by **Docker Compose**, utilizing **NGINX** for load balancing across multiple stateless **Node.js/Express** replicas. Data persistence is handled via a **sharded MongoDB** cluster for URLs, a **MySQL-based Key Generation Service** for unique IDs, and **Redis** for sub-millisecond caching.
+A production-grade, minimalist URL shortener built as an entry-level SaaS product. Demonstrates a distributed backend architecture with cloud-hosted databases, a premium animated frontend, and full CI/CD deployment.
 
 ---
 
 ## ✨ Features
 
-### 🎨 Frontend (Premium UI/UX)
-- **Minimalist SaaS Aesthetic** – Clean, professional design focused on usability.
-- **Dark & Light Mode** – Full theme support with system persistence.
-- **Micro-Animations** – Staggered transitions, hover effects, and spring-based interactions powered by `framer-motion`.
-- **Responsive Design** – Fully optimized for Mobile, Tablet, and Desktop.
-- **Analytics Dashboard** – Detailed click tracking with data visualization using `recharts`.
-- **Zero-Friction UX** – Anonymous link creation (temporary) or account-based management (persistent).
-
-### ⚙️ Backend (Distributed Architecture)
-- **Horizontal Scaling** – NGINX load balancer distributing traffic across 3 Express replicas.
-- **Distributed ID Generation** – Dedicated Key Service using MySQL to prevent ID collisions across pods.
-- **High Availability** – MongoDB sharding and Redis caching for optimal performance and uptime.
-- **Swagger Documentation** – Interactive API explorer at `/api-docs`.
-- **Stateless Auth** – JWT-based authentication with optional protection for guest usage.
+| Feature | Details |
+|---|---|
+| **Guest Shortening** | No login required — links auto-expire in 24 hours |
+| **Authenticated Shortening** | Registered users get 30-day persistent links |
+| **Custom Aliases** | Define your own short URL slug (e.g. `/my-brand`) |
+| **Click Analytics** | Per-link click tracking with bar-chart visualisation |
+| **Dark / Light Mode** | System-aware with `localStorage` persistence |
+| **Framer Motion UI** | Staggered page loads, hover effects, spring animations |
+| **Responsive Design** | Mobile-first layout with hamburger nav |
+| **Key Generation Service** | Dedicated MySQL microservice for collision-free IDs |
+| **Redis Caching** | Sub-millisecond redirect lookups via Upstash |
+| **NGINX Load Balancer** | Distributes traffic across 3 stateless Express replicas |
+| **Graceful Fallback** | nanoid fallback when Key Service is temporarily unavailable |
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ Architecture
 
-```mermaid
-graph TD
-    Client[Client Browser] --> Nginx[NGINX Load Balancer]
-    Nginx -- Round Robin --> Pod1[Express Replica 1]
-    Nginx -- Round Robin --> Pod2[Express Replica 2]
-    Nginx -- Round Robin --> Pod3[Express Replica 3]
-
-    Pod1 & Pod2 & Pod3 --> Redis[(Redis Cache)]
-    Pod1 & Pod2 & Pod3 --> KeyService[Key Generation Service - MySQL]
-    Pod1 & Pod2 & Pod3 --> Mongo[(Sharded MongoDB)]
+```
+Browser (Vercel)
+      │
+      ▼
+  NGINX (Port 3000)   ◄── Load Balancer (round-robin)
+      │
+  ┌───┴──────────────────┐
+  │                      │
+Backend Pod 1   Backend Pod 2   Backend Pod 3
+  (Express)      (Express)       (Express)
+      │               │               │
+      └───────┬────────────────┬──────┘
+              │                │
+    ┌──────────────┐   ┌───────────────┐
+    │  Upstash     │   │  MongoDB      │
+    │  Redis (TLS) │   │  Atlas        │
+    └──────────────┘   └───────────────┘
+              │
+    ┌─────────────────┐
+    │  Key Service    │
+    │  (Express)      │
+    │  Aiven MySQL    │
+    └─────────────────┘
 ```
 
-- **Load Balancer**: NGINX (Port 3000) acts as the entry point, routing requests to backend pods.
-- **Caching Layer**: Redis stores frequently accessed URLs to minimize database hits.
-- **Persistence**: MongoDB stores URL mappings, while MySQL manages the sequence for unique key generation.
+- **Frontend**: Vite + React, deployed on Vercel
+- **Backend**: 3× Express replicas behind NGINX, deployed on Railway
+- **Key Service**: Dedicated Express service with Aiven Cloud MySQL, deployed on Railway
+- **MongoDB Atlas**: Cloud-sharded document store for URL mappings
+- **Upstash Redis**: Serverless Redis (TLS) for high-speed caching
+- **Aiven MySQL**: Cloud MySQL for pre-generated short key pool
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 18, Vite, Tailwind CSS, Framer Motion, Recharts, Axios.
-- **Backend**: Node.js, Express, Mongoose, JWT.
-- **Infrastructure**: Docker, Docker Compose, NGINX.
-- **Databases**: MongoDB (Sharded), MySQL, Redis.
+**Frontend**
+- React 18 + Vite
+- Tailwind CSS (dark mode via `class` strategy)
+- Framer Motion (animations)
+- Recharts (analytics charts)
+- Axios (HTTP client)
+
+**Backend**
+- Node.js + Express
+- Mongoose (MongoDB ODM)
+- JWT Authentication
+- express-rate-limit (100 req / 15 min per IP)
+- cookie-parser
+
+**Infrastructure**
+- Docker + Docker Compose
+- NGINX (load balancer)
+- Railway (backend hosting)
+- Vercel (frontend hosting)
+- MongoDB Atlas · Aiven MySQL · Upstash Redis
 
 ---
 
-## 📦 Getting Started
+## 📦 Local Development
 
 ### Prerequisites
+- Node.js 18+
 - Docker & Docker Compose
-- Node.js 18+ (for local development)
 
-### 1. Clone the Repository
+### 1. Clone
 ```bash
-git clone <repo-url>
-cd link
+git clone https://github.com/sampremm/URL-Shortener.git
+cd URL-Shortener
 ```
 
-### 2. Launch the Infrastructure
+### 2. Configure environment files
+
+**`Backend/.env`**
+```env
+DATABASE_URL=<your MongoDB Atlas URI>
+REDIS_URL=<your Upstash Redis URI (rediss://)>
+JWT_SECRET=<random secret>
+JWT_EXPIRES_IN=64h
+PORT=3000
+BASE_URL=http://localhost:3000
+```
+
+**`KeyService/.env`**
+```env
+MYSQL_HOST=<Aiven host>
+MYSQL_USER=avnadmin
+MYSQL_PASSWORD=<password>
+MYSQL_DATABASE=defaultdb
+MYSQL_PORT=<port>
+PORT=4000
+```
+
+**`frontend/.env`**
+```env
+VITE_APP_API_URL=http://localhost:3000
+VITE_APP_BASE_URL=http://localhost:3000
+```
+
+### 3. Start services
 ```bash
-# Starts MongoDB Cluster, Redis, MySQL, NGINX, and Backend Pods
+# Start all containers (NGINX, backend replicas, KeyService)
 docker compose up -d --build
+
+# Start frontend dev server
+cd frontend && npm install && npm run dev
 ```
 
-### 3. Start the Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Open [http://localhost:5173](http://localhost:5173) to see the app.
+App runs at `http://localhost:5173`.
 
 ---
 
-## 🧪 Testing
+## 🚀 Production Deployment
 
-SnapLink includes a comprehensive end-to-end test suite to ensure system stability across all distributed components.
+### Backend (Railway)
+Add these environment variables in the Railway service dashboard:
+
+```env
+DATABASE_URL=<MongoDB Atlas URI>
+REDIS_URL=<Upstash URI>
+JWT_SECRET=<secret>
+JWT_EXPIRES_IN=64h
+KEY_SERVICE_URL=<Railway internal URL for KeyService>
+FRONTEND_URL=https://your-frontend.vercel.app
+BASE_URL=https://your-backend.up.railway.app
+```
+
+### KeyService (Railway)
+```env
+MYSQL_HOST=<Aiven host>
+MYSQL_USER=avnadmin
+MYSQL_PASSWORD=<password>
+MYSQL_DATABASE=defaultdb
+MYSQL_PORT=<port>
+```
+
+### Frontend (Vercel)
+```env
+VITE_APP_API_URL=https://your-backend.up.railway.app
+VITE_APP_BASE_URL=https://your-backend.up.railway.app
+```
+
+---
+
+## 🧪 End-to-End Tests
 
 ```bash
-# From the root directory
 node test-backend.js
 ```
-The test suite validates:
-1. User Registration & Login.
-2. Guest URL Shortening (24h expiry).
-3. Authenticated URL Shortening (30d expiry).
-4. Redirection Logic.
-5. Real-time Click Analytics.
+
+Covers: Registration → Login → Shorten → Redirect → Analytics.
 
 ---
 
-## 📄 API Documentation
+## 📚 API Reference
 
-Once the backend is running, access the interactive Swagger documentation at:
-`http://localhost:3000/api-docs`
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/url/auth/register` | ❌ | Register a new user |
+| `POST` | `/url/auth/login` | ❌ | Login, returns JWT |
+| `GET` | `/url/auth/profile` | ✅ | Get current user |
+| `POST` | `/url/auth/logout` | ✅ | Clear session |
+| `POST` | `/api/urls` | Optional | Shorten a URL |
+| `GET` | `/api/urls/:shortCode` | ❌ | Redirect to original URL |
+| `GET` | `/api/urls/analytics/:id` | ✅ | Get click analytics for user |
+
+Swagger UI available at `/api-docs` when running locally.
 
 ---
 
 ## 📁 Project Structure
 
-```text
-link/
-├── Backend/              # Express API replicas
-├── KeyService/           # ID Generation Service (MySQL)
-├── frontend/             # React SPA (Vite)
-│   ├── src/
-│   │   ├── components/  # Reusable UI parts
-│   │   ├── context/     # Auth & Theme providers
-│   │   └── pages/       # Home, Analytics, Login, etc.
-├── nginx.conf            # LB Configuration
-├── docker-compose.yml    # Dev orchestration
-└── test-backend.js       # E2E Test Suite
+```
+URL-Shortener/
+├── Backend/              # Express API (3 replicas via Docker)
+│   ├── config/          # Redis client
+│   ├── controller/      # URL + Auth logic
+│   ├── data/            # MongoDB connection
+│   ├── middleware/       # JWT auth, optional auth
+│   ├── model/           # Mongoose schemas
+│   └── routes/          # Express routers
+├── KeyService/           # Key Generation microservice (MySQL)
+├── frontend/             # Vite + React SPA
+│   └── src/
+│       ├── api/         # Axios instance
+│       ├── components/  # Navbar
+│       ├── context/     # Auth + Theme providers
+│       └── pages/       # Home, Login, Signup, Analytics, Shorten
+├── nginx.conf            # NGINX load balancer config
+├── docker-compose.yml    # Local orchestration
+└── test-backend.js       # E2E test suite
 ```
 
 ---
 
-## 🌟 Resume Highlights
+## 📝 Resume Highlights
 
-- **Scalability**: Orchestrated a distributed system using NGINX and Docker, ensuring stateless backend operation.
-- **Performance**: Reduced latency by implementing a Redis caching layer for high-traffic URL redirects.
-- **Full-Stack Mastery**: Built a premium React frontend with complex state management and a robust Node.js microservices backend.
-- **System Design**: Implemented a custom Key Generation Service to handle unique ID distribution in a multi-pod environment.
+- Designed a **multi-service SaaS** with NGINX load balancing across 3 stateless Express replicas
+- Integrated **MongoDB Atlas**, **Aiven MySQL**, and **Upstash Redis (TLS)** as cloud-managed data layer
+- Built a **Key Generation Service** to ensure collision-free short IDs across distributed pods
+- Implemented **graceful degradation** — URL shortening continues via `nanoid` fallback when Key Service is unavailable
+- Shipped a premium **React/Tailwind/Framer Motion** frontend with dark mode, analytics dashboard, and responsive design
+- Deployed full-stack to **Railway** (backend) and **Vercel** (frontend) with proper CORS and environment variable configuration
 
 ---
 
-*Built with ❤️ for the modern web.*
+*Built with ❤️ — SnapLink*
