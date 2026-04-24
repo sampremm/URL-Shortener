@@ -1,6 +1,9 @@
 import express from 'express';
 import mysql from 'mysql2/promise';
 import { nanoid } from 'nanoid';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -10,6 +13,7 @@ const dbConfig = {
   user: process.env.MYSQL_USER || 'root',
   password: process.env.MYSQL_PASSWORD || 'root',
   database: process.env.MYSQL_DATABASE || 'keys_db',
+  port: parseInt(process.env.MYSQL_PORT) || 3306,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
