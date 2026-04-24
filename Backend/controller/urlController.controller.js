@@ -66,13 +66,22 @@ export const shortenUrl = async (req, res) => {
           originalUrl: url.originalUrl,
         });
       }
-      const keyServiceUrl = process.env.KEY_SERVICE_URL || 'http://localhost:4000';
-      const keyRes = await fetch(`${keyServiceUrl}/api/keys`);
-      if (!keyRes.ok) {
-        throw new Error('Failed to fetch key from Key Service');
+      try {
+        const keyServiceUrl = process.env.KEY_SERVICE_URL || 'http://localhost:4000';
+        const keyRes = await fetch(`${keyServiceUrl}/api/keys`, {
+          signal: AbortSignal.timeout(3000),
+        });
+        if (keyRes.ok) {
+          const keyData = await keyRes.json();
+          shortUrl = keyData.key;
+        } else {
+          console.warn('KeyService returned non-OK, falling back to nanoid');
+          shortUrl = nanoid(7);
+        }
+      } catch (keyErr) {
+        console.warn('KeyService unreachable, falling back to nanoid:', keyErr.message);
+        shortUrl = nanoid(7);
       }
-      const keyData = await keyRes.json();
-      shortUrl = keyData.key;
     } else {
       shortUrl = customURL;
       isCustom = true;
