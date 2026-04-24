@@ -27,8 +27,7 @@ const ProfileAnalytics = () => {
     setLoading(true);
     setError('');
     try {
-      const baseURL = import.meta.env.VITE_APP_API_URL;
-      const res = await axiosInstance.get(`${baseURL}/analytics/${user._id}`, {
+      const res = await axiosInstance.get(`/api/urls/analytics/${user._id}`, {
         headers: { Authorization: `Bearer ${token}` },
         withCredentials: true,
       });
