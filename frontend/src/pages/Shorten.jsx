@@ -25,11 +25,13 @@ const Shorten = () => {
       const payload = { originalUrl };
       if (customURL) payload.customURL = customURL;
       const res = await axiosInstance.post('/api/urls', payload, config);
-      const fullShortUrl = `${import.meta.env.VITE_APP_API_URL}/${res.data.shortUrl}`;
+      const base = import.meta.env.VITE_APP_BASE_URL || import.meta.env.VITE_APP_API_URL;
+      const fullShortUrl = `${base}/${res.data.shortUrl}`;
       setShortUrl(fullShortUrl);
       setShortId(res.data.shortUrl);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to shorten URL');
+      const msg = err.response?.data?.error;
+      setError(typeof msg === 'string' ? msg : 'Failed to shorten URL');
     } finally {
       setLoading(false);
     }
