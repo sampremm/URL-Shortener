@@ -21,6 +21,7 @@ connectRedis().catch(console.error);
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
+  "https://url-shortener-production-8a23.up.railway.app",
   "https://url-shortener-six-sandy.vercel.app", // production Vercel frontend
   process.env.FRONTEND_URL, // extra override via Railway env var
 ].filter(Boolean);
