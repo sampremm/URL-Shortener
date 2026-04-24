@@ -14,6 +14,7 @@ const dbConfig = {
   password: process.env.MYSQL_PASSWORD || 'root',
   database: process.env.MYSQL_DATABASE || 'keys_db',
   port: parseInt(process.env.MYSQL_PORT) || 3306,
+  ssl: process.env.MYSQL_HOST && !process.env.MYSQL_HOST.includes('localhost') ? { rejectUnauthorized: false } : null,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0
