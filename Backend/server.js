@@ -18,12 +18,21 @@ connectDB();
 connectRedis().catch(console.error);
 
 
-app.use(cors(
-  {
-    origin: "http://localhost:5173", // Allow frontend origin (React)
-    credentials: true
-  }
-));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:3000",
+  process.env.FRONTEND_URL, // set this in Railway: https://url-shortener-six-sandy.vercel.app
+].filter(Boolean);
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
+  },
+  credentials: true,
+}));
 
 app.use(cookieParser());
 app.get("/", (req, res) => {

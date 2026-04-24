@@ -33,7 +33,8 @@ const ProfileAnalytics = () => {
       });
       setAnalytics(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to load analytics');
+      const msg = err.response?.data?.error;
+      setError(typeof msg === 'string' ? msg : 'Failed to load analytics');
     } finally {
       setLoading(false);
     }
