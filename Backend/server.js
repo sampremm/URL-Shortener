@@ -21,12 +21,12 @@ connectRedis().catch(console.error);
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:3000",
-  process.env.FRONTEND_URL, // set this in Railway: https://url-shortener-six-sandy.vercel.app
+  "https://url-shortener-six-sandy.vercel.app", // production Vercel frontend
+  process.env.FRONTEND_URL, // extra override via Railway env var
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // allow requests with no origin (like mobile apps, curl, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
     callback(new Error(`CORS blocked: ${origin}`));
