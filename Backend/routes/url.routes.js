@@ -7,5 +7,5 @@ const router = express.Router();
 
 router.post("/", protectOptional, shortenUrl);
 router.get("/analytics/:id",protect, getAnalytics);
-router.get('/:shortCode', redirectUrl);
+
 export default router;

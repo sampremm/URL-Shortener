@@ -49,8 +49,12 @@ const apiLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' }
 });
 
+import { redirectUrl } from "./controller/urlController.controller.js";
+
 app.use("/api/urls", apiLimiter, router);
 app.use("/url/auth",authRoutes);
+
+app.get("/:shortCode", redirectUrl);
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
